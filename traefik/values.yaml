@@ -1,0 +1,112 @@
+globalArguments:
+  - "--global.sendanonymoususage=false"
+  - "--global.checknewversion=false"
+additionalArguments:
+  - "--serversTransport.insecureSkipVerify=true"
+  - "--providers.file.filename=/etc/traefik/dyn-conf.yml"
+  - "--entrypoints.web.http.redirections.entrypoint.to=:443"
+  - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+service:
+  spec:
+    type: LoadBalancer
+    # externalTrafficPolicy: Local
+    ipFamilyPolicy: PreferDualStack
+    ipFamilies:
+      - IPv4
+      - IPv6
+    #loadBalancerIP: 192.168.201.80
+
+ingressRoute:
+  dashboard:
+    enabled: true
+    entryPoints:
+      - websecure
+    matchRule: Host(`traefik.srv.linuxburken.se`) #&& PathPrefix(`/dashboard`) #|| PathPrefix(`/api`)
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+persistence:
+  enabled: true
+  name: data
+  accessMode: ReadWriteOnce
+  size: 128Mi
+  path: /data
+
+volumes:
+  - name: traefik-dynamic
+    mountPath: "/etc/traefik/"
+    type: configMap
+
+log:
+  level: INFO
+
+certResolvers:
+  letsencrypt:
+    dnsChallenge:
+      provider: cloudflare
+    storage: /data/acme.json
+env:
+  - name: CF_DNS_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare
+        key: token
+
+tls:
+  enabled: true
+  certResolver: letsencrypt
+
+deployment:
+  initContainers:
+    - name: volume-permissions
+      image: busybox:latest
+      command:
+        ["sh", "-c", "touch /data/acme.json; chmod -v 600 /data/acme.json"]
+      volumeMounts:
+        - mountPath: /data
+          name: data
+
+providers:
+  kubernetesCRD:
+    # -- Load Kubernetes IngressRoute provider
+    enabled: true
+    # -- Allows IngressRoute to reference resources in namespace other than theirs
+    allowCrossNamespace: false
+    # -- Allows to reference ExternalName services in IngressRoute
+    allowExternalNameServices: false
+    # -- Allows to return 503 when there is no endpoints available
+    allowEmptyServices: false
+    # ingressClass: traefik-internal
+    # labelSelector: environment=production,method=traefik
+    # -- Array of namespaces to watch. If left empty, Traefik watches all namespaces.
+    namespaces: []
+    # - "default"
+
+  kubernetesIngress:
+    # -- Load Kubernetes Ingress provider
+    enabled: true
+    # -- Allows to reference ExternalName services in Ingress
+    allowExternalNameServices: false
+    # -- Allows to return 503 when there is no endpoints available
+    allowEmptyServices: false
+    # ingressClass: traefik-internal
+    # labelSelector: environment=production,method=traefik
+    # -- Array of namespaces to watch. If left empty, Traefik watches all namespaces.
+    namespaces: []
+    # - "default"
+    # Disable cluster IngressClass Lookup - Requires Traefik V3.
+    # When combined with rbac.namespaced: true, ClusterRole will not be created and ingresses must use kubernetes.io/ingress.class annotation instead of spec.ingressClassName.
+    disableIngressClassLookup: false
+    # IP used for Kubernetes Ingress endpoints
+    publishedService:
+      enabled: false
+      # Published Kubernetes Service to copy status from. Format: namespace/servicename
+      # By default this Traefik service
+      # pathOverride: ""

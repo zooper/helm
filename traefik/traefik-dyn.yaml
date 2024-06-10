@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-dynamic
+  namespace: default
+data:
+  dyn-conf.yml: |
+    http:
+      routers:
+        mstdn:
+          entryPoints:
+            - "websecure"
+          rule: "Host(`mstdn.kernel-panic.lol`)"
+          tls:
+            certResolver: letsencrypt
+          service: mstdn
+
+      services:
+        mstdn:
+          loadBalancer:
+            servers:
+            - url: "https://192.168.100.33"
