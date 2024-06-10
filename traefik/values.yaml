@@ -110,3 +110,10 @@ providers:
       # Published Kubernetes Service to copy status from. Format: namespace/servicename
       # By default this Traefik service
       # pathOverride: ""
+  file:
+    # -- Create a file provider
+    enabled: false
+    # -- Allows Traefik to automatically watch for file changes
+    watch: true
+    content:
+

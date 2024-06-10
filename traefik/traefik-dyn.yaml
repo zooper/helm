@@ -15,8 +15,20 @@ data:
             certResolver: letsencrypt
           service: mstdn
 
+        rpki:
+          entryPoints:
+            - "websecure"
+          rule: "Host(`rpki.as215855.net`)"
+          tls:
+            certResolver: letsencrypt
+          service: rpki
       services:
         mstdn:
           loadBalancer:
             servers:
             - url: "https://192.168.100.33"
+
+        rpki:
+          loadBalancer:
+            servers:
+            - url: "https://192.168.100.43"
