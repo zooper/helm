@@ -24,6 +24,8 @@ ingressRoute:
     matchRule: Host(`traefik.srv.linuxburken.se`) #&& PathPrefix(`/dashboard`) #|| PathPrefix(`/api`)
 
 entryPoints:
+  metrics:
+    address: ":9100"
   web:
     address: ":80"
   websecure:
@@ -117,3 +119,10 @@ providers:
     watch: true
     content:
 
+ports:
+  metrics:
+    port: 9100
+    expose:
+      default: true
+    exposedPort: 9100
+    protocol: TCP
