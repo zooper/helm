@@ -40,7 +40,7 @@ data:
         rpki:
           loadBalancer:
             servers:
-            - url: "https://192.168.100.43"
+              - url: "http://192.168.100.43:8323/"
 
         authentik:
           loadBalancer:
